@@ -1,14 +1,18 @@
 section .data
-frontBuffer db 80 * 25 dup(' ')
-backBfufer db 80 * 25 dup(' ')
-width dd 80
-height dd 25
-formatStringC db "%c", 0
-formatStringS db "%s", 0
-enterString db 10, 0
-millseconds dq 33 
-cls_cmd db "cls", 0
-consoleHandle dq 0
+frontBuffer     db 80 * 25 dup(' ')
+width           dd 80
+height          dd 25
+formatStringC   db "%c", 0
+formatStringS   db "%s", 0
+enterString     db 10, 0
+millseconds     dq 33 
+consoleHandle   dq 0
+snakeHeadPos    dd 0
+
+wkeyCode       equ 0x57          
+akeyCode       equ 0x41    
+skeyCode       equ 0x53    
+dkeyCode       equ 0x44      
 
 cursorInfo:
    dd 1 
@@ -32,6 +36,7 @@ extern SetConsoleCursorInfo
 extern SetConsoleCursorPosition
 extern GetLastError
 extern system
+extern GetAsyncKeyState
 
 main:
    push    rbp
@@ -39,12 +44,18 @@ main:
    sub     rsp, 32            
    and     rsp, -16           
 
+   ; 플레이어 좌표 초기화
+   xor     rax, rax
+   mov     ax,   5
+   mov     word [snakeHeadPos], ax
+   mov     word [snakeHeadPos+2], ax
+
    mov     ecx, -11
    sub     rsp, 32            
    call    GetStdHandle
    add     rsp, 32            
    mov     [consoleHandle], rax
-
+   
    mov     rcx, rax          
    lea     rdx, [cursorInfo]  
    sub     rsp, 32            
@@ -52,7 +63,7 @@ main:
    add     rsp, 32           
    
 GAME_LOOP:
-   mov      byte [frontBuffer + 100], 'b'
+   call     update
    call     redner
    mov      rcx, [millseconds]
    sub      rsp, 32
@@ -62,6 +73,90 @@ GAME_LOOP:
    xor      rcx, rcx
    call     ExitProcess
    ret
+
+
+update:
+   push     rbp
+   mov      rbp, rsp
+   sub      rsp, 40
+   
+   sub      rsp, 32  
+   mov      ecx, wkeyCode
+   call     GetAsyncKeyState
+   add      rsp, 32
+   
+   test    rax, rax
+   jz      W_NOT_PRESSED
+   mov     word [rbp - 4], 0 ; UP   
+   mov     word [rbp - 6], 0 ; nextX
+   mov     word [rbp - 8], -1 ; nextY
+            
+W_NOT_PRESSED:
+   
+   sub      rsp, 32  
+   mov      ecx, akeyCode
+   call     GetAsyncKeyState
+   add      rsp, 32
+   
+   test     rax, rax
+   jz       A_NOT_PRESSED
+   mov      word   [rbp - 4], 1 ; LEFT
+   mov      word   [rbp - 6], -1 ; nextX
+   mov      word   [rbp - 8], 0 ; nextY
+       
+A_NOT_PRESSED:   
+
+   sub      rsp, 32  
+   mov      ecx, skeyCode
+   call     GetAsyncKeyState
+   add      rsp, 32
+   
+   test     rax, rax
+   jz       S_NOT_PRESSED
+   mov      word   [rbp - 4], 2 ; DWON
+   mov      word   [rbp - 6], 0 ; nextX
+   mov      word   [rbp - 8], 1 ; nextY
+
+S_NOT_PRESSED:
+   
+   sub      rsp, 32  
+   mov      ecx, dkeyCode
+   call     GetAsyncKeyState
+   add      rsp, 32
+   
+   test     rax, rax
+   jz       D_NOT_PRESSED
+   mov      word   [rbp - 4], 3 ; RIGHT
+   mov      word   [rbp - 6], 1 ; nextX
+   mov      word   [rbp - 8], 0 ; nextY
+   
+D_NOT_PRESSED:
+
+   ; 플레이어 좌표 변경
+   xor      rax, rax
+   xor      rbx, rbx
+   mov      bx, word [snakeHeadPos]
+   add      bx, [rbp-6]
+   mov      word [snakeHeadPos], bx
+   mov      ax, word [snakeHeadPos+2]     
+   add      ax, [rbp-8]
+   mov      word [snakeHeadPos+2], ax
+
+  
+   ; 플레이어 위치 버퍼에 반영
+   xor      rax, rax
+   xor      rbx, rbx
+   mov      bx, word [snakeHeadPos]
+   mov      ax, word [snakeHeadPos+2]
+   imul     eax, [width]
+   add      eax, ebx
+   
+   mov      byte [frontBuffer + eax], 'O'
+   
+   mov      rsp, rbp
+   pop      rbp
+   ret
+
 
 redner:
    push     rbp
