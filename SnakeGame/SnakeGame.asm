@@ -5,7 +5,7 @@ height          dd 25
 formatStringC   db "%c", 0
 formatStringS   db "%s", 0
 enterString     db 10, 0
-millseconds     dq 33 
+millseconds     dq 100 
 consoleHandle   dq 0
 snakeHeadPos    dd 0
 
@@ -131,6 +131,19 @@ S_NOT_PRESSED:
    mov      word   [rbp - 8], 0 ; nextY
    
 D_NOT_PRESSED:
+
+
+
+   ; 플레이어 위치 버퍼에 반영
+   xor      rax, rax
+   xor      rbx, rbx
+   mov      bx, word [snakeHeadPos]
+   mov      ax, word [snakeHeadPos+2]
+   imul     eax, [width]
+   add      eax, ebx
+   
+   mov      byte [frontBuffer + eax], ' '
+   
 
    ; 플레이어 좌표 변경
    xor      rax, rax
