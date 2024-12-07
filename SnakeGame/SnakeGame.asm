@@ -19,7 +19,6 @@ command         db "cls", 0
 heapHandle      dq 0
 snake           dq 0
 snakeLength     dd 3
-
 preyPos         dd 0
 
 cursorInfo:
@@ -63,7 +62,7 @@ main:
    call    srand 
    mov     eax, 1 
    mov     dword [gameEnd], eax
-   ; 힙 초기화
+  
    call    GetProcessHeap
    mov     [heapHandle], rax
    mov     rcx, [heapHandle]
@@ -84,81 +83,81 @@ main:
    sub     rsp, 32            
    call    SetConsoleCursorInfo
    add     rsp, 32           
-
-            
+          
 MAIN_GAME_LOOP:
-    cmp     dword [gameEnd], dword 1
-    jne     GAME_LOOP
+    cmp    dword [gameEnd], dword 1
+    jne    GAME_LOOP
 
 MENU_LOOP:
-   lea      rcx, [command]
-   call     system
+   lea     rcx, [command]
+   call    system
   
-   xor      rcx, rcx
-   lea      rcx, [menuString]
-   call     printf
+   xor     rcx, rcx
+   lea     rcx, [menuString]
+   call    printf
   
-   xor      rcx, rcx
-   call     fflush
+   xor     rcx, rcx
+   call    fflush
    
 D_KEY_RE_INPUT:
-   mov      rcx, 1
-   sub      rsp, 32
-   call     Sleep
-   add      rsp, 32
+   mov     rcx, 1
+   sub     rsp, 32
+   call    Sleep
+   add     rsp, 32
 
-   sub      rsp, 32  
-   mov      ecx, dkeyCode
-   call     GetAsyncKeyState
-   add      rsp, 32  
+   sub     rsp, 32  
+   mov     ecx, dkeyCode
+   call    GetAsyncKeyState
+   add     rsp, 32  
        
-   test     rax, rax
-   jz       D_KEY_RE_INPUT
+   test    rax, rax
+   jz      D_KEY_RE_INPUT
    
-   xor      rcx, rcx
-   lea      rcx, [command]
-   call     system
-   mov      dword [gameEnd], dword 0
-   ; 플레이어 좌표 초기화
+   xor     rcx, rcx
+   lea     rcx, [command]
+   call    system
+   mov     dword [gameEnd], dword 0
+ 
    call    playerInit
    call    randomPrey
+   
 GAME_LOOP:
-   call     update
-   call     redner
+   call    update
+   call    redner
    
-   cmp      dword [gameEnd], dword 1
-   je       MENU_LOOP
+   cmp     dword [gameEnd], dword 1
+   je      MENU_LOOP
    
-   mov      rcx, [millseconds]
-   sub      rsp, 32
-   call     Sleep
-   add      rsp, 32
-   jmp      GAME_LOOP
+   mov     rcx, [millseconds]
+   sub     rsp, 32
+   call    Sleep
+   add     rsp, 32
+   jmp     GAME_LOOP
       
 GAME_END:
-   mov      rcx, [heapHandle]
-   xor      rdx, rdx
-   mov      r8,  [snake]
-   call     HeapFree
+   mov     rcx, [heapHandle]
+   xor     rdx, rdx
+   mov     r8,  [snake]
+   call    HeapFree
    
-   xor      rcx, rcx
-   call     ExitProcess
+   xor     rcx, rcx
+   call    ExitProcess
    ret
 
 update:
-   push     rbp
-   mov      rbp, rsp
-   sub      rsp, 40
+   push    rbp
+   mov     rbp, rsp
+   sub     rsp, 40
    
-   sub      rsp, 32  
-   mov      ecx, wkeyCode
-   call     GetAsyncKeyState
-   add      rsp, 32
-   xor      rcx, rcx
-   mov      cx, word [direction]
-   mov      word [rbp - 4], cx
-   mov      word [rbp - 6], 0
-   mov      word [rbp - 8], 0 
+   sub     rsp, 32  
+   mov     ecx, wkeyCode
+   call    GetAsyncKeyState
+   add     rsp, 32
+   xor     rcx, rcx
+   mov     cx, word [direction]
+   mov     word [rbp - 4], cx
+   mov     word [rbp - 6], 0
+   mov     word [rbp - 8], 0 
     
    test    rax, rax
    jz      W_NOT_PRESSED
@@ -166,78 +165,78 @@ update:
    cmp     word [rbp - 4],  2
    je      W_NOT_PRESSED 
    
-   mov     word [rbp - 4], 0 ; UP      
+   mov     word [rbp - 4], 0       
             
 W_NOT_PRESSED:
    
-   sub      rsp, 32  
-   mov      ecx, akeyCode
-   call     GetAsyncKeyState
-   add      rsp, 32
+   sub     rsp, 32  
+   mov     ecx, akeyCode
+   call    GetAsyncKeyState
+   add     rsp, 32
    
-   test     rax, rax
-   jz       A_NOT_PRESSED
+   test    rax, rax
+   jz      A_NOT_PRESSED
    
    cmp     word [rbp - 4],  3
    je      A_NOT_PRESSED 
    
-   mov      word   [rbp - 4], 1 ; LEFT
+   mov     word   [rbp - 4], 1 
        
 A_NOT_PRESSED:   
 
-   sub      rsp, 32  
-   mov      ecx, skeyCode
-   call     GetAsyncKeyState
-   add      rsp, 32
+   sub     rsp, 32  
+   mov     ecx, skeyCode
+   call    GetAsyncKeyState
+   add     rsp, 32
    
-   test     rax, rax
-   jz       S_NOT_PRESSED
+   test    rax, rax
+   jz      S_NOT_PRESSED
    
    cmp     word [rbp - 4],  0
    je      S_NOT_PRESSED 
    
-   mov      word   [rbp - 4], 2 ; DWON
+   mov     word   [rbp - 4], 2 
 
 S_NOT_PRESSED:
    
-   sub      rsp, 32  
-   mov      ecx, dkeyCode
-   call     GetAsyncKeyState
-   add      rsp, 32
+   sub     rsp, 32  
+   mov     ecx, dkeyCode
+   call    GetAsyncKeyState
+   add     rsp, 32
    
-   test     rax, rax
-   jz       D_NOT_PRESSED
+   test    rax, rax
+   jz      D_NOT_PRESSED
    
    cmp     word [rbp - 4],  1
    je      D_NOT_PRESSED 
    
-   mov      word   [rbp - 4], 3 ; RIGHT
+   mov     word   [rbp - 4], 3 
      
 D_NOT_PRESSED:
-   cmp      word [rbp - 4], word 0
-   je       UP_MOVE
-   cmp      word [rbp - 4], word 1
-   je       LEFT_MOVE
-   cmp      word [rbp - 4], word 2
-   je       DWON_MOVE
-   cmp      word [rbp - 4], word 3
-   je       RIGHT_MOVE
+   cmp     word [rbp - 4], word 0
+   je      UP_MOVE
+   cmp     word [rbp - 4], word 1
+   je      LEFT_MOVE
+   cmp     word [rbp - 4], word 2
+   je      DWON_MOVE
+   cmp     word [rbp - 4], word 3
+   je      RIGHT_MOVE
    
 UP_MOVE:
-   mov     word [rbp - 6], 0 ; nextX
-   mov     word [rbp - 8], -1 ; nextY
+   mov     word [rbp - 6], 0 
+   mov     word [rbp - 8], -1 
    jmp     MOVE_END
 LEFT_MOVE:
-   mov      word   [rbp - 6], -1 ; nextX
-   mov      word   [rbp - 8], 0 ; nextY
+   mov     word   [rbp - 6], -1 
+   mov     word   [rbp - 8], 0 
    jmp     MOVE_END
 DWON_MOVE:
-   mov      word   [rbp - 6], 0 ; nextX
-   mov      word   [rbp - 8], 1 ; nextY
+   mov     word   [rbp - 6], 0 
+   mov     word   [rbp - 8], 1 
    jmp     MOVE_END
 RIGHT_MOVE:
-   mov      word   [rbp - 6], 1 ; nextX
-   mov      word   [rbp - 8], 0 ; nextY
+   mov     word   [rbp - 6], 1 
+   mov     word   [rbp - 8], 0 
    jmp     MOVE_END
 
 MOVE_END:
@@ -245,121 +244,118 @@ MOVE_END:
    mov     ax, word [rbp - 4]
    mov     word [direction], ax
 
-   ; 여기서 충돌 체크 (벽인지, 먹이인지, 자기 꼬리인지)
-   xor      rax, rax
-   mov      rcx, [snake]
-   mov      ax, word [rbp - 6]
-   add      ax, word [rcx]
+   xor     rax, rax
+   xor     rbx, rbx
+   mov     rcx, [snake]
+   mov     ax, word [rbp - 6]
+   add     ax, word [rcx]
    
-   mov      bx, word [rbp - 8]
-   add      bx, word [rcx + 2]
+   mov     bx, word [rbp - 8]
+   add     bx, word [rcx + 2]
    
-   cmp      ax, 0
-   je       To_END  ; 벽에 닿았음 나중에는 사망 처리
+   cmp     ax, 0
+   je      To_END  
    
-   cmp      ax, 79 
-   je       To_END  ; 벽에 닿았음 나중에는 사망 처리
+   cmp     ax, 79 
+   je      To_END  
    
-   cmp      bx, 0
-   je       To_END ; 벽에 닿았음 나중에는 사망 처리
+   cmp     bx, 0
+   je      To_END 
    
-   cmp      bx, 24
-   je       To_END ; 벽에 닿았음 나중에는 사망 처리
+   cmp     bx, 24
+   je      To_END 
    
-   xor      rcx, rcx
-   mov      cx,  ax
-   ;;;; 자기 몸에 닿았는지 체크!!
-   imul     cx, [width]
-   add      cx, bx
-   cmp      byte [frontBuffer + rcx], byte 'O'
-   je       To_END
+   xor     rcx, rcx
+   mov     cx,  bx
+   imul    cx, [width]
+   add     cx, ax
+   cmp     byte [frontBuffer + rcx], byte 'O'
+   je      To_END
    
-   cmp      ax, word [preyPos]
-   jne      PREY_PASS
+   cmp     ax, word [preyPos]
+   jne     PREY_PASS
     
-   cmp      bx, word [preyPos + 2]   
-   jne      PREY_PASS
+   cmp     bx, word [preyPos + 2]   
+   jne     PREY_PASS
    
-   ; 먹이를 먹은거니깐 길이 1 증가
-   xor      rcx, rcx
-   xor      rdx, rdx
-   mov      edx, [snakeLength]
-   dec      edx         ; 꼬리 인덱스 구하기
-   shl      edx, 2
-   mov      rcx, [snake]
-   add      rcx, rdx
+   xor     rcx, rcx
+   xor     rdx, rdx
+   mov     edx, [snakeLength]
+   dec     edx        
+   shl     edx, 2
+   mov     rcx, [snake]
+   add     rcx, rdx
    
-   ; 현재 방향의 반대 값으로 꼬리 생성 (왼쪽이면->오른쪽, 오른쪽->왼쪽, 위->아래, 아래->위)
-   cmp      word   [rbp - 4], 0
-   jne      NOT_UP
-   mov      ax, word [rcx]
-   mov      bx, word [rcx+2]
-   inc      bx
-   add      rcx, 4
-   mov      word [rcx], ax
-   mov      word [rcx + 2], bx
-   xor      rax, rax
-   mov      eax, [snakeLength]
-   inc      eax
-   mov      dword [snakeLength], eax
+   cmp     word   [rbp - 4], 0
+   jne     NOT_UP
+   mov     ax, word [rcx]
+   mov     bx, word [rcx+2]
+   inc     bx
+   add     rcx, 4
+   mov     word [rcx], ax
+   mov     word [rcx + 2], bx
+   xor     rax, rax
+   mov     eax, [snakeLength]
+   inc     eax
+   mov     dword [snakeLength], eax
    
-   jmp      PREY_SPAWN
+   jmp     PREY_SPAWN
 NOT_UP:
    
-   cmp      word   [rbp - 4], 1
-   jne      NOT_LEFT
-   mov      ax, word [rcx]
-   mov      bx, word [rcx+2]
-   inc      ax
-   add      rcx, 4
-   mov      word [rcx], ax
-   mov      word [rcx + 2], bx
-   xor      rax, rax
-   mov      eax, [snakeLength]
-   inc      eax
-   mov      dword [snakeLength], eax
+   cmp     word   [rbp - 4], 1
+   jne     NOT_LEFT
+   mov     ax, word [rcx]
+   mov     bx, word [rcx+2]
+   inc     ax
+   add     rcx, 4
+   mov     word [rcx], ax
+   mov     word [rcx + 2], bx
+   xor     rax, rax
+   mov     eax, [snakeLength]
+   inc     eax
+   mov     dword [snakeLength], eax
    
-   jmp      PREY_SPAWN
+   jmp     PREY_SPAWN
    
 NOT_LEFT:
    
-   cmp      word   [rbp - 4], 2
-   jne      NOT_DWON
-   mov      ax, word [rcx]
-   mov      bx, word [rcx+2]
-   dec      bx
-   add      rcx, 4
-   mov      word [rcx], ax
-   mov      word [rcx + 2], bx
-   xor      rax, rax
-   mov      eax, [snakeLength]
-   inc      eax
-   mov      dword [snakeLength], eax
+   cmp     word   [rbp - 4], 2
+   jne     NOT_DWON
+   mov     ax, word [rcx]
+   mov     bx, word [rcx+2]
+   dec     bx
+   add     rcx, 4
+   mov     word [rcx], ax
+   mov     word [rcx + 2], bx
+   xor     rax, rax
+   mov     eax, [snakeLength]
+   inc     eax
+   mov     dword [snakeLength], eax
    
-   jmp      PREY_SPAWN
+   jmp     PREY_SPAWN
    
 NOT_DWON:
-   cmp      word   [rbp - 4], 3
-   jne      PREY_PASS
-   mov      ax, word [rcx]
-   mov      bx, word [rcx+2]
-   dec      ax
-   add      rcx, 4
-   mov      word [rcx], ax
-   mov      word [rcx + 2], bx
-   xor      rax, rax
-   mov      eax, [snakeLength]
-   inc      eax
-   mov      dword [snakeLength], eax
+   cmp     word   [rbp - 4], 3
+   jne     PREY_PASS
+   mov     ax, word [rcx]
+   mov     bx, word [rcx+2]
+   dec     ax
+   add     rcx, 4
+   mov     word [rcx], ax
+   mov     word [rcx + 2], bx
+   xor     rax, rax
+   mov     eax, [snakeLength]
+   inc     eax
+   mov     dword [snakeLength], eax
  
-   jmp      PREY_SPAWN
+   jmp     PREY_SPAWN
    
 PREY_SPAWN:
-    call randomPrey
+    call   randomPrey
 
 PREY_PASS:
-   ; 플레이어 위치 버퍼에 반영
    mov      dword [rbp-28], 0
+   
 TEMP_FOR_LOOP1:
    xor      rax, rax
    xor      rbx, rbx
@@ -378,15 +374,15 @@ TEMP_FOR_LOOP1:
    cmp      dword [rbp - 28], edx
    jne      TEMP_FOR_LOOP1       
    
-   mov       dword [rbp - 14], dword 0 ; prevPos
-   mov       dword [rbp - 18], dword 0 ; nextPos
-   mov       dword [rbp - 24], dword 0 ; 인덱스
+   mov      dword [rbp - 14], dword 0 
+   mov      dword [rbp - 18], dword 0 
+   mov      dword [rbp - 24], dword 0 
    
-   mov      rcx,   [snake]
+   mov      rcx, [snake]
    mov      ax, word [rcx]
    mov      bx, word [rcx + 2]
    mov      word  [rbp - 14], ax
-   mov      word  [rbp - 16], bx    ; prevPos 세팅
+   mov      word  [rbp - 16], bx    
    
    xor      rax, rax
    xor      rbx, rbx
@@ -397,35 +393,34 @@ TEMP_FOR_LOOP1:
    mov      [rbp - 18], word ax
    mov      bx, word [rcx + 2]
    add      bx, word [rbp - 8]
-   mov      [rbp - 20], word  bx     ; nextPos 세팅
+   mov      [rbp - 20], word  bx     
    
 TEMP_FOR_LOOP2:
-   xor     rdx, rdx
-   mov     edx, [rbp - 24]     ; Index
-   shl     edx, 2
-   mov     rcx, [snake]        
-   add     rcx, rdx 
-   mov     ax, word [rcx]          ; prevPos 저장
-   mov     word [rbp - 14], ax
-   mov     ax, word [rcx + 2]
-   mov     word [rbp - 16], ax
+   xor      rdx, rdx
+   mov      edx, [rbp - 24]     
+   shl      edx, 2
+   mov      rcx, [snake]        
+   add      rcx, rdx 
+   mov      ax, word [rcx]         
+   mov      word [rbp - 14], ax
+   mov      ax, word [rcx + 2]
+   mov      word [rbp - 16], ax
 
-   mov     ax, word [rbp - 18]     ; nowPos 갱신
-   mov     word [rcx], ax
-   mov     ax, word [rbp - 20]
-   mov     word [rcx + 2], ax
+   mov      ax, word [rbp - 18]     
+   mov      word [rcx], ax
+   mov      ax, word [rbp - 20]
+   mov      word [rcx + 2], ax
 
-   mov     ax, word [rbp - 14]     ; nextPos 갱신
-   mov     word [rbp - 18], ax
-   mov     ax, word [rbp - 16]
-   mov     word [rbp - 20], ax 
+   mov      ax, word [rbp - 14]     
+   mov      word [rbp - 18], ax
+   mov      ax, word [rbp - 16]
+   mov      word [rbp - 20], ax 
     
-   xor     rdx, rdx    
-   mov     edx, dword [snakeLength]
-   add     dword [rbp - 24], 1
-   cmp     dword [rbp - 24], edx
-   jne     TEMP_FOR_LOOP2       
-
+   xor      rdx, rdx    
+   mov      edx, dword [snakeLength]
+   add      dword [rbp - 24], 1
+   cmp      dword [rbp - 24], edx
+   jne      TEMP_FOR_LOOP2       
 
    mov      dword [rbp-28], 0
 TEMP_FOR_LOOP3:
@@ -588,38 +583,36 @@ RE_YPOS:
     mov     word [preyPos + 2], word dx            
     mov     rsp, rbp
     pop     rbp
-    ret
-    
+    ret   
     
 playerInit:
     push    rbp
     mov     rbp, rsp
     sub     rsp, 32
        
-    xor      rax, rax
-    xor      rbx, rbx
-    xor      rdx, rdx
-    mov      eax, [width]
-    imul     eax, [height]
+    xor     rax, rax
+    xor     rbx, rbx
+    xor     rdx, rdx
+    mov     eax, [width]
+    imul    eax, [height]
        
 TEMP_FOR_LOOP4:
-    mov      byte [frontBuffer + edx], ' '
-    inc      edx
-    cmp      eax, edx
-    jne      TEMP_FOR_LOOP4      
+    mov     byte [frontBuffer + edx], ' '
+    inc     edx
+    cmp     eax, edx
+    jne     TEMP_FOR_LOOP4      
     
-   ; 플레이어 좌표 초기화
-   xor     rax, rax
-   mov     dword [snakeLength], 3   
-   mov     rcx, [snake]
-   mov     [rcx], word 5
-   mov     [rcx + 2], word 5
-   add     rcx, 4
-   mov     [rcx], word 4
-   mov     [rcx + 2], word 5
-   add     rcx, 4
-   mov     [rcx], word 3
-   mov     [rcx + 2], word 5
+    xor     rax, rax
+    mov     dword [snakeLength], 3   
+    mov     rcx, [snake]
+    mov     [rcx], word 5
+    mov     [rcx + 2], word 5
+    add     rcx, 4
+    mov     [rcx], word 4
+    mov     [rcx + 2], word 5
+    add     rcx, 4
+    mov     [rcx], word 3
+    mov     [rcx + 2], word 5
     
     mov     rsp, rbp
     pop     rbp
