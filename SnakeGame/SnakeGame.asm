@@ -4,6 +4,7 @@ width           dd 80
 height          dd 25
 formatStringC   db "%c", 0
 formatStringS   db "%s", 0
+menuString      db "Player Game 'D' Key Press!", 0
 enterString     db 10, 0
 millseconds     dq 100 
 consoleHandle   dq 0
@@ -14,7 +15,7 @@ wkeyCode        equ 0x57
 akeyCode        equ 0x41    
 skeyCode        equ 0x53    
 dkeyCode        equ 0x44      
-
+command         db "cls", 0
 heapHandle      dq 0
 snake           dq 0
 snakeLength     dd 3
@@ -60,7 +61,8 @@ main:
    mov     rbx, rax
    mov     rcx, rbx
    call    srand 
-   mov     dword [gameEnd], 1
+   mov     eax, 1 
+   mov     dword [gameEnd], eax
    ; 힙 초기화
    call    GetProcessHeap
    mov     [heapHandle], rax
@@ -83,25 +85,50 @@ main:
    call    SetConsoleCursorInfo
    add     rsp, 32           
 
-   
-      
             
 MAIN_GAME_LOOP:
-    cmp     dword [gameEnd], 1
+    cmp     dword [gameEnd], dword 1
     jne     GAME_LOOP
 
 MENU_LOOP:
+   lea      rcx, [command]
+   call     system
+  
+   xor      rcx, rcx
+   lea      rcx, [menuString]
+   call     printf
+  
+   xor      rcx, rcx
+   call     fflush
+   
+D_KEY_RE_INPUT:
+   mov      rcx, 1
+   sub      rsp, 32
+   call     Sleep
+   add      rsp, 32
 
-
-
-
-
+   sub      rsp, 32  
+   mov      ecx, dkeyCode
+   call     GetAsyncKeyState
+   add      rsp, 32  
+       
+   test     rax, rax
+   jz       D_KEY_RE_INPUT
+   
+   xor      rcx, rcx
+   lea      rcx, [command]
+   call     system
+   mov      dword [gameEnd], dword 0
    ; 플레이어 좌표 초기화
    call    playerInit
    call    randomPrey
 GAME_LOOP:
    call     update
    call     redner
+   
+   cmp      dword [gameEnd], dword 1
+   je       MENU_LOOP
+   
    mov      rcx, [millseconds]
    sub      rsp, 32
    call     Sleep
@@ -214,16 +241,16 @@ MOVE_END:
    add      bx, word [rcx + 2]
    
    cmp      ax, 0
-   je       NOT_UPDATE  ; 벽에 닿았음 나중에는 사망 처리
+   je       To_END  ; 벽에 닿았음 나중에는 사망 처리
    
    cmp      ax, 79 
-   je       NOT_UPDATE  ; 벽에 닿았음 나중에는 사망 처리
+   je       To_END  ; 벽에 닿았음 나중에는 사망 처리
    
    cmp      bx, 0
-   je       NOT_UPDATE ; 벽에 닿았음 나중에는 사망 처리
+   je       To_END ; 벽에 닿았음 나중에는 사망 처리
    
    cmp      bx, 24
-   je       NOT_UPDATE ; 벽에 닿았음 나중에는 사망 처리
+   je       To_END ; 벽에 닿았음 나중에는 사망 처리
       
    cmp      ax, word [preyPos]
    jne      PREY_PASS
@@ -401,7 +428,13 @@ NOT_UPDATE:
    mov      rsp, rbp
    pop      rbp
    ret
-
+   
+To_END:
+   mov      eax, 1
+   mov      dword [gameEnd], eax
+   mov      rsp, rbp
+   pop      rbp
+   ret
 
 redner:
    push     rbp
@@ -540,6 +573,18 @@ playerInit:
     push    rbp
     mov     rbp, rsp
     sub     rsp, 32
+       
+    xor      rax, rax
+    xor      rbx, rbx
+    xor      rdx, rdx
+    mov      eax, [width]
+    imul     eax, [height]
+       
+TEMP_FOR_LOOP4:
+    mov      byte [frontBuffer + edx], ' '
+    inc      edx
+    cmp      eax, edx
+    jne      TEMP_FOR_LOOP4      
     
    ; 플레이어 좌표 초기화
    xor     rax, rax
