@@ -265,7 +265,15 @@ MOVE_END:
    
    cmp      bx, 24
    je       To_END ; 벽에 닿았음 나중에는 사망 처리
-      
+   
+   xor      rcx, rcx
+   mov      cx,  ax
+   ;;;; 자기 몸에 닿았는지 체크!!
+   imul     cx, [width]
+   add      cx, bx
+   cmp      byte [frontBuffer + rcx], byte 'O'
+   je       To_END
+   
    cmp      ax, word [preyPos]
    jne      PREY_PASS
     
