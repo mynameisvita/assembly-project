@@ -162,7 +162,10 @@ update:
     
    test    rax, rax
    jz      W_NOT_PRESSED
-
+   
+   cmp     word [rbp - 4],  2
+   je      W_NOT_PRESSED 
+   
    mov     word [rbp - 4], 0 ; UP      
             
 W_NOT_PRESSED:
@@ -175,6 +178,9 @@ W_NOT_PRESSED:
    test     rax, rax
    jz       A_NOT_PRESSED
    
+   cmp     word [rbp - 4],  3
+   je      A_NOT_PRESSED 
+   
    mov      word   [rbp - 4], 1 ; LEFT
        
 A_NOT_PRESSED:   
@@ -186,6 +192,10 @@ A_NOT_PRESSED:
    
    test     rax, rax
    jz       S_NOT_PRESSED
+   
+   cmp     word [rbp - 4],  0
+   je      S_NOT_PRESSED 
+   
    mov      word   [rbp - 4], 2 ; DWON
 
 S_NOT_PRESSED:
@@ -197,6 +207,10 @@ S_NOT_PRESSED:
    
    test     rax, rax
    jz       D_NOT_PRESSED
+   
+   cmp     word [rbp - 4],  1
+   je      D_NOT_PRESSED 
+   
    mov      word   [rbp - 4], 3 ; RIGHT
      
 D_NOT_PRESSED:
