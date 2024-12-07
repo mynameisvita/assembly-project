@@ -8,6 +8,7 @@ enterString     db 10, 0
 millseconds     dq 100 
 consoleHandle   dq 0
 snakeHeadPos    dd 0
+direction       dw 0
 
 wkeyCode        equ 0x57          
 akeyCode        equ 0x41    
@@ -17,6 +18,9 @@ dkeyCode        equ 0x44
 heapHandle      dq 0
 snake           dq 0
 snakeLength     dd 3
+
+preyPos         dd 0
+
 cursorInfo:
    dd 1 
    dd 0 
@@ -35,6 +39,8 @@ extern GetStdHandle
 extern fflush
 extern Sleep
 extern time
+extern srand
+extern rand
 extern SetConsoleCursorInfo
 extern SetConsoleCursorPosition
 extern GetLastError
@@ -49,6 +55,12 @@ main:
    sub     rsp, 32            
    and     rsp, -16           
 
+   xor     rcx, rcx
+   call    time
+   mov     rbx, rax
+   mov     rcx, rbx
+   call    srand 
+
    ; 힙 초기화
    call    GetProcessHeap
    mov     [heapHandle], rax
@@ -57,7 +69,7 @@ main:
    mov     r8, 1024
    call    HeapAlloc
    mov     [snake], rax
-
+   mov     word [direction], 3
    ; 플레이어 좌표 초기화
    xor     rax, rax
    mov     rcx, [snake]
@@ -81,7 +93,7 @@ main:
    sub     rsp, 32            
    call    SetConsoleCursorInfo
    add     rsp, 32           
-   
+   call    randomPrey
 GAME_LOOP:
    call     update
    call     redner
@@ -100,7 +112,6 @@ GAME_LOOP:
    call     ExitProcess
    ret
 
-
 update:
    push     rbp
    mov      rbp, rsp
@@ -110,7 +121,6 @@ update:
    mov      ecx, wkeyCode
    call     GetAsyncKeyState
    add      rsp, 32
-    
    mov      word [rbp - 4], 4
    mov      word [rbp - 6], 0
    mov      word [rbp - 8], 0 
@@ -162,14 +172,116 @@ S_NOT_PRESSED:
    mov      word   [rbp - 4], 3 ; RIGHT
    mov      word   [rbp - 6], 1 ; nextX
    mov      word   [rbp - 8], 0 ; nextY
-   
+     
 D_NOT_PRESSED:
-  
-   
    cmp      dword [rbp - 4], 4
    je       NOT_UPDATE
-  
-  
+   
+   ; 여기서 충돌 체크 (벽인지, 먹이인지, 자기 꼬리인지)
+   xor      rax, rax
+   mov      rcx, [snake]
+   mov      ax, word [rbp - 6]
+   add      ax, word [rcx]
+   
+   mov      bx, word [rbp - 8]
+   add      bx, word [rcx + 2]
+   
+   cmp      ax, 0
+   je       NOT_UPDATE  ; 벽에 닿았음 나중에는 사망 처리
+   
+   cmp      ax, 79 
+   je       NOT_UPDATE  ; 벽에 닿았음 나중에는 사망 처리
+   
+   cmp      bx, 0
+   je       NOT_UPDATE ; 벽에 닿았음 나중에는 사망 처리
+   
+   cmp      bx, 24
+   je       NOT_UPDATE ; 벽에 닿았음 나중에는 사망 처리
+      
+   cmp      ax, word [preyPos]
+   jne      PREY_PASS
+    
+   cmp      bx, word [preyPos + 2]   
+   jne      PREY_PASS
+   
+   ; 먹이를 먹은거니깐 길이 1 증가
+   xor      rcx, rcx
+   xor      rdx, rdx
+   mov      edx, [snakeLength]
+   dec      edx         ; 꼬리 인덱스 구하기
+   shl      edx, 2
+   mov      rcx, [snake]
+   add      rcx, rdx
+   
+   ; 현재 방향의 반대 값으로 꼬리 생성 (왼쪽이면->오른쪽, 오른쪽->왼쪽, 위->아래, 아래->위)
+   cmp      word   [rbp - 4], 0
+   jne      NOT_UP
+   mov      ax, word [rcx]
+   mov      bx, word [rcx+2]
+   inc      bx
+   add      rcx, 4
+   mov      word [rcx], ax
+   mov      word [rcx + 2], bx
+   xor      rax, rax
+   mov      eax, [snakeLength]
+   inc      eax
+   mov      dword [snakeLength], eax
+   
+   jmp      PREY_SPAWN
+NOT_UP:
+   
+   cmp      word   [rbp - 4], 1
+   jne      NOT_LEFT
+   mov      ax, word [rcx]
+   mov      bx, word [rcx+2]
+   inc      ax
+   add      rcx, 4
+   mov      word [rcx], ax
+   mov      word [rcx + 2], bx
+   xor      rax, rax
+   mov      eax, [snakeLength]
+   inc      eax
+   mov      dword [snakeLength], eax
+   
+   jmp      PREY_SPAWN
+   
+NOT_LEFT:
+   
+   cmp      word   [rbp - 4], 2
+   jne      NOT_DWON
+   mov      ax, word [rcx]
+   mov      bx, word [rcx+2]
+   dec      bx
+   add      rcx, 4
+   mov      word [rcx], ax
+   mov      word [rcx + 2], bx
+   xor      rax, rax
+   mov      eax, [snakeLength]
+   inc      eax
+   mov      dword [snakeLength], eax
+   
+   jmp      PREY_SPAWN
+   
+NOT_DWON:
+   cmp      word   [rbp - 4], 3
+   jne      PREY_PASS
+   mov      ax, word [rcx]
+   mov      bx, word [rcx+2]
+   dec      ax
+   add      rcx, 4
+   mov      word [rcx], ax
+   mov      word [rcx + 2], bx
+   xor      rax, rax
+   mov      eax, [snakeLength]
+   inc      eax
+   mov      dword [snakeLength], eax
+ 
+   jmp      PREY_SPAWN
+   
+PREY_SPAWN:
+    call randomPrey
+
+PREY_PASS:
    ; 플레이어 위치 버퍼에 반영
    mov      dword [rbp-28], 0
 TEMP_FOR_LOOP1:
@@ -212,34 +324,33 @@ TEMP_FOR_LOOP1:
    mov      [rbp - 20], word  bx     ; nextPos 세팅
    
 TEMP_FOR_LOOP2:
-    xor     rdx, rdx
-    mov     edx, [rbp - 24]     ; Index
-    shl     edx, 2
-    mov     rcx, [snake]        
-    add     rcx, rdx 
-    mov     ax, word [rcx]          ; prevPos 저장
-    mov     word [rbp - 14], ax
-    mov     ax, word [rcx + 2]
-    mov     word [rbp - 16], ax
+   xor     rdx, rdx
+   mov     edx, [rbp - 24]     ; Index
+   shl     edx, 2
+   mov     rcx, [snake]        
+   add     rcx, rdx 
+   mov     ax, word [rcx]          ; prevPos 저장
+   mov     word [rbp - 14], ax
+   mov     ax, word [rcx + 2]
+   mov     word [rbp - 16], ax
 
-    mov     ax, word [rbp - 18]     ; nowPos 갱신
-    mov     word [rcx], ax
-    mov     ax, word [rbp - 20]
-    mov     word [rcx + 2], ax
+   mov     ax, word [rbp - 18]     ; nowPos 갱신
+   mov     word [rcx], ax
+   mov     ax, word [rbp - 20]
+   mov     word [rcx + 2], ax
 
-    mov     ax, word [rbp - 14]     ; nextPos 갱신
-    mov     word [rbp - 18], ax
-    mov     ax, word [rbp - 16]
-    mov     word [rbp - 20], ax 
+   mov     ax, word [rbp - 14]     ; nextPos 갱신
+   mov     word [rbp - 18], ax
+   mov     ax, word [rbp - 16]
+   mov     word [rbp - 20], ax 
     
-    xor     rdx, rdx    
-    mov     edx, dword [snakeLength]
-    add     dword [rbp - 24], 1
-    cmp     dword [rbp - 24], edx
-    jne     TEMP_FOR_LOOP2       
+   xor     rdx, rdx    
+   mov     edx, dword [snakeLength]
+   add     dword [rbp - 24], 1
+   cmp     dword [rbp - 24], edx
+   jne     TEMP_FOR_LOOP2       
 
 
-   ; 플레이어 위치 버퍼에 반영
    mov      dword [rbp-28], 0
 TEMP_FOR_LOOP3:
    xor      rax, rax
@@ -257,7 +368,7 @@ TEMP_FOR_LOOP3:
    add      dword [rbp - 28], 1
    mov      edx, dword [snakeLength]
    cmp      dword [rbp - 28], edx
-   jne       TEMP_FOR_LOOP3     
+   jne      TEMP_FOR_LOOP3     
 
 NOT_UPDATE:   
    mov      rsp, rbp
@@ -333,7 +444,24 @@ IS_NOT_WALL:
    mov      [rbp - 8], eax
    cmp      eax, [height]
    jl       HEIGHT_LOOP
-
+   
+   xor      rax, rax
+   mov      ax, word [preyPos]
+   mov      word [coord], ax  
+   mov      ax, word [preyPos + 2]   
+   mov      word [coord+2], ax   
+   mov      rcx, [consoleHandle]
+   movzx    eax, word [coord]    
+   movzx    ebx, word [coord+2] 
+   shl      ebx, 16             
+   or       eax, ebx             
+   mov      edx, eax           
+   call     SetConsoleCursorPosition
+   
+   mov      rdx, '$'
+   lea      rcx, [formatStringC]
+   call     printf
+   
    xor      rcx, rcx
    sub      rsp, 32
    call     fflush
@@ -342,3 +470,41 @@ IS_NOT_WALL:
    mov      rsp, rbp
    pop      rbp
    ret
+   
+randomPrey:
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 32
+    
+RE_XPOS:
+    call    rand
+    xor     rcx, rcx 
+    mov     ecx, dword [width]
+    xor     rdx, rdx
+    div     ecx
+    
+    cmp     rdx, 0
+    je      RE_XPOS
+
+    cmp     rdx, 79
+    je      RE_XPOS
+    mov     word [preyPos], word dx  
+    
+RE_YPOS:
+    xor     rax, rax
+    call    rand
+    xor     rcx, rcx
+    mov     ecx, dword [height]
+    xor     rdx, rdx
+    div     ecx
+    
+    cmp     rdx, 0 
+    je      RE_YPOS
+    
+    cmp     rdx, 24
+    je      RE_YPOS
+    mov     word [preyPos + 2], word dx            
+    mov     rsp, rbp
+    pop     rbp
+    ret
+    
