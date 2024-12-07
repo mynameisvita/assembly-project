@@ -9,7 +9,7 @@ millseconds     dq 100
 consoleHandle   dq 0
 snakeHeadPos    dd 0
 direction       dw 0
-
+gameEnd         dd 0
 wkeyCode        equ 0x57          
 akeyCode        equ 0x41    
 skeyCode        equ 0x53    
@@ -60,7 +60,7 @@ main:
    mov     rbx, rax
    mov     rcx, rbx
    call    srand 
-
+   mov     dword [gameEnd], 1
    ; 힙 초기화
    call    GetProcessHeap
    mov     [heapHandle], rax
@@ -70,18 +70,7 @@ main:
    call    HeapAlloc
    mov     [snake], rax
    mov     word [direction], 3
-   ; 플레이어 좌표 초기화
-   xor     rax, rax
-   mov     rcx, [snake]
-   mov     [rcx], word 5
-   mov     [rcx + 2], word 5
-   add     rcx, 4
-   mov     [rcx], word 4
-   mov     [rcx + 2], word 5
-   add     rcx, 4
-   mov     [rcx], word 3
-   mov     [rcx + 2], word 5
-   
+      
    mov     ecx, -11
    sub     rsp, 32            
    call    GetStdHandle
@@ -93,6 +82,22 @@ main:
    sub     rsp, 32            
    call    SetConsoleCursorInfo
    add     rsp, 32           
+
+   
+      
+            
+MAIN_GAME_LOOP:
+    cmp     dword [gameEnd], 1
+    jne     GAME_LOOP
+
+MENU_LOOP:
+
+
+
+
+
+   ; 플레이어 좌표 초기화
+   call    playerInit
    call    randomPrey
 GAME_LOOP:
    call     update
@@ -102,7 +107,8 @@ GAME_LOOP:
    call     Sleep
    add      rsp, 32
    jmp      GAME_LOOP
-   
+      
+GAME_END:
    mov      rcx, [heapHandle]
    xor      rdx, rdx
    mov      r8,  [snake]
@@ -121,17 +127,16 @@ update:
    mov      ecx, wkeyCode
    call     GetAsyncKeyState
    add      rsp, 32
-   mov      word [rbp - 4], 4
+   xor      rcx, rcx
+   mov      cx, word [direction]
+   mov      word [rbp - 4], cx
    mov      word [rbp - 6], 0
    mov      word [rbp - 8], 0 
     
    test    rax, rax
    jz      W_NOT_PRESSED
 
-   mov     word [rbp - 4], 0 ; UP   
-   mov     word [rbp - 6], 0 ; nextX
-   mov     word [rbp - 8], -1 ; nextY
-   
+   mov     word [rbp - 4], 0 ; UP      
             
 W_NOT_PRESSED:
    
@@ -144,8 +149,6 @@ W_NOT_PRESSED:
    jz       A_NOT_PRESSED
    
    mov      word   [rbp - 4], 1 ; LEFT
-   mov      word   [rbp - 6], -1 ; nextX
-   mov      word   [rbp - 8], 0 ; nextY
        
 A_NOT_PRESSED:   
 
@@ -157,8 +160,6 @@ A_NOT_PRESSED:
    test     rax, rax
    jz       S_NOT_PRESSED
    mov      word   [rbp - 4], 2 ; DWON
-   mov      word   [rbp - 6], 0 ; nextX
-   mov      word   [rbp - 8], 1 ; nextY
 
 S_NOT_PRESSED:
    
@@ -170,13 +171,39 @@ S_NOT_PRESSED:
    test     rax, rax
    jz       D_NOT_PRESSED
    mov      word   [rbp - 4], 3 ; RIGHT
-   mov      word   [rbp - 6], 1 ; nextX
-   mov      word   [rbp - 8], 0 ; nextY
      
 D_NOT_PRESSED:
-   cmp      dword [rbp - 4], 4
-   je       NOT_UPDATE
+   cmp      word [rbp - 4], word 0
+   je       UP_MOVE
+   cmp      word [rbp - 4], word 1
+   je       LEFT_MOVE
+   cmp      word [rbp - 4], word 2
+   je       DWON_MOVE
+   cmp      word [rbp - 4], word 3
+   je       RIGHT_MOVE
    
+UP_MOVE:
+   mov     word [rbp - 6], 0 ; nextX
+   mov     word [rbp - 8], -1 ; nextY
+   jmp     MOVE_END
+LEFT_MOVE:
+   mov      word   [rbp - 6], -1 ; nextX
+   mov      word   [rbp - 8], 0 ; nextY
+   jmp     MOVE_END
+DWON_MOVE:
+   mov      word   [rbp - 6], 0 ; nextX
+   mov      word   [rbp - 8], 1 ; nextY
+   jmp     MOVE_END
+RIGHT_MOVE:
+   mov      word   [rbp - 6], 1 ; nextX
+   mov      word   [rbp - 8], 0 ; nextY
+   jmp     MOVE_END
+
+MOVE_END:
+
+   mov     ax, word [rbp - 4]
+   mov     word [direction], ax
+
    ; 여기서 충돌 체크 (벽인지, 먹이인지, 자기 꼬리인지)
    xor      rax, rax
    mov      rcx, [snake]
@@ -508,3 +535,25 @@ RE_YPOS:
     pop     rbp
     ret
     
+    
+playerInit:
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 32
+    
+   ; 플레이어 좌표 초기화
+   xor     rax, rax
+   mov     dword [snakeLength], 3   
+   mov     rcx, [snake]
+   mov     [rcx], word 5
+   mov     [rcx + 2], word 5
+   add     rcx, 4
+   mov     [rcx], word 4
+   mov     [rcx + 2], word 5
+   add     rcx, 4
+   mov     [rcx], word 3
+   mov     [rcx + 2], word 5
+    
+    mov     rsp, rbp
+    pop     rbp
+    ret
